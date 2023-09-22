@@ -202,42 +202,42 @@ class AsynchVI(ValueIteration):
         # Do a one-step lookahead to find the best action       #
         # Update the value function. Ref: Sutton book eq. 4.10. #
         #########################################################
-        st = self.pq.pop()
-        a = self.one_step_lookahead(st)
-        aMx = np.argmax(a)
 
-        p = self.env.P[st][aMx]
+        cur_st = self.pq.pop()
+
+        lah = self.one_step_lookahead(cur_st)
+        a = np.argmax(lah)
+        p = self.env.P[cur_st][a]
 
         sums = 0
         for s in p:
             sums += s[0] * self.V[s[1]]
 
-        val = a[aMx] + self.options.gamma * sums
+        self.V[cur_st] = lah[a] + self.options.gamma * sums
 
-        self.V[st] = val
+        for n_st in self.env.P:
+            stateDone = False
+            for n_a in self.env.P[n_st]:
+                if stateDone:
+                    break
+                for n_p in self.env.P[n_st][n_a]:
+                    if stateDone:
+                        break
+                    if n_p[1] == cur_st:
+                        # print('CHECKIT:', n_st, n_a, n_p, cur_st)
 
-        # self.pq.update(st,self.V[st] - val)
+                        lah2 = self.one_step_lookahead(n_st)
+                        a2 = np.argmax(lah2)
+                        p2 = self.env.P[n_st][a2]
 
-        for s in p:
-            if s[0] > 0:
-                a2 = self.one_step_lookahead(s[1])
-                aMx2 = np.argmax(a2)
+                        sums2 = 0
+                        for s2 in p2:
+                            sums2 += s2[0] * self.V[s2[1]]
 
-                p2 = self.env.P[s[1]][aMx]
-
-                sums2 = 0
-                for s2 in p2:
-                    sums2 += s2[0] * self.V[s2[1]]
-
-                val2 = a2[aMx2] + self.options.gamma * sums2
-
-                self.pq.update(s[1],self.V[s[1]] - val2)
-
-        # for i in self.env.P:
-        #     # print('i',i, self.env.P[i])
-        #     for j in self.env.P[i]:
-        #         if self.env.P[i][j][0][1] == st:
-        #             self.pq.update(i, self.V[i] - val)
+                        upVal = np.abs(self.V[n_st] - (lah2[a2] + self.options.gamma * sums2))
+                        # Fails 3 without abs, 4 with abs
+                        self.pq.update(n_st, upVal)
+                        stateDone = True
 
 
 
