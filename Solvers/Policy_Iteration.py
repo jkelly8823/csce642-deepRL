@@ -46,7 +46,17 @@ class PolicyIteration(AbstractSolver):
             ################################
             #   YOUR IMPLEMENTATION HERE   #
             ################################
+            oldA = self.policy[s]
 
+            v = self.V[s]
+            a = np.argmax(self.one_step_lookahead(s))
+            p = self.env.P[s][a]
+
+            sums = 0
+            for st in p:
+                sums += st[0] * (st[2] + self.options.gamma * self.V[st[1]])
+
+            self.policy[s] = sums
 
         # In DP methods we don't interact with the environment so we will set the reward to be the sum of state values
         # and the number of steps to -1 representing an invalid value
@@ -90,6 +100,18 @@ class PolicyIteration(AbstractSolver):
         ################################
         #   YOUR IMPLEMENTATION HERE   #
         ################################
+        for s in range(self.env.observation_space.n):
+            v = self.V[s]
+
+            a = np.argmax(self.policy[s])
+
+            p = self.env.P[s][a]
+
+            sums = 0
+            for st in p:
+                sums += st[0] * (st[2] + self.options.gamma * self.V[st[1]])
+
+            self.V[s] = sums
 
     def create_greedy_policy(self):
         """

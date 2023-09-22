@@ -203,18 +203,43 @@ class AsynchVI(ValueIteration):
         # Update the value function. Ref: Sutton book eq. 4.10. #
         #########################################################
         st = self.pq.pop()
-        a = np.argmax(self.one_step_lookahead(st))
+        a = self.one_step_lookahead(st)
+        aMx = np.argmax(a)
 
-        p = self.env.P[st][a]
-
+        p = self.env.P[st][aMx]
 
         sums = 0
         for s in p:
-            sums += s[0] * (s[2] + self.options.gamma * self.V[s[1]])
+            sums += s[0] * self.V[s[1]]
 
-        self.pq.update(st,self.V[st] - sums)
+        val = a[aMx] + self.options.gamma * sums
 
-        self.V[st] = sums
+        self.V[st] = val
+
+        # self.pq.update(st,self.V[st] - val)
+
+        for s in p:
+            if s[0] > 0:
+                a2 = self.one_step_lookahead(s[1])
+                aMx2 = np.argmax(a2)
+
+                p2 = self.env.P[s[1]][aMx]
+
+                sums2 = 0
+                for s2 in p2:
+                    sums2 += s2[0] * self.V[s2[1]]
+
+                val2 = a2[aMx2] + self.options.gamma * sums2
+
+                self.pq.update(s[1],self.V[s[1]] - val2)
+
+        # for i in self.env.P:
+        #     # print('i',i, self.env.P[i])
+        #     for j in self.env.P[i]:
+        #         if self.env.P[i][j][0][1] == st:
+        #             self.pq.update(i, self.V[i] - val)
+
+
 
 
 
