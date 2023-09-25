@@ -234,7 +234,9 @@ class AsynchVI(ValueIteration):
                         for s2 in p2:
                             sums2 += s2[0] * self.V[s2[1]]
 
-                        upVal = np.abs(self.V[n_st] - (lah2[a2] + self.options.gamma * sums2))
+                        # upVal = self.V[n_st] - (lah2[a2] + self.options.gamma * sums2) # Fails 3, g=0.5 r=3.83
+                        upVal = np.abs(self.V[n_st] - (lah2[a2] + self.options.gamma * sums2)) # Fails 4, g=0.5 r=0.63984
+                        # upVal = -1 * np.abs(self.V[n_st] - (lah2[a2] + self.options.gamma * sums2)) # Fails 3, g=0.5 r=3.83
                         # Fails 3 without abs, 4 with abs
                         self.pq.update(n_st, upVal)
                         stateDone = True

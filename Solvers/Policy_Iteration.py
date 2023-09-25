@@ -48,15 +48,21 @@ class PolicyIteration(AbstractSolver):
             ################################
             oldA = self.policy[s]
 
-            v = self.V[s]
-            a = np.argmax(self.one_step_lookahead(s))
-            p = self.env.P[s][a]
+            lah = self.one_step_lookahead(s)
+            a = np.argmax(lah)
 
-            sums = 0
-            for st in p:
-                sums += st[0] * (st[2] + self.options.gamma * self.V[st[1]])
+            self.policy[s] = a
 
-            self.policy[s] = sums
+
+            # p = self.env.P[s][a]
+
+
+
+            # sums = 0
+            # for st in p:
+            #     sums += st[0] * (st[2] + self.options.gamma * self.V[st[1]])
+            #
+            # self.policy[s] = sums
 
         # In DP methods we don't interact with the environment so we will set the reward to be the sum of state values
         # and the number of steps to -1 representing an invalid value
@@ -100,18 +106,50 @@ class PolicyIteration(AbstractSolver):
         ################################
         #   YOUR IMPLEMENTATION HERE   #
         ################################
-        for s in range(self.env.observation_space.n):
-            v = self.V[s]
 
+        coeff = []
+        outs = []
+
+        for s in range(self.env.observation_space.n):
             a = np.argmax(self.policy[s])
 
             p = self.env.P[s][a]
 
-            sums = 0
-            for st in p:
-                sums += st[0] * (st[2] + self.options.gamma * self.V[st[1]])
+            cfs = np.zeros(self.env.observation_space.n)
+            eq = 0
+            # print('HERE WITH', s)
+            for prob, next_state, reward, done in self.env.P[s][a]:
+                # print(prob, next_state, reward, done)
+                cfs[next_state] = prob * self.options.gamma
+                eq -= prob * reward
 
-            self.V[s] = sums
+            cfs[s] -= 1
+            # p1 (r1 + g s1)
+            # p1r1 + p1g s1
+            coeff.append(cfs)
+            outs.append(eq)
+
+        sol = np.linalg.solve(coeff, outs)
+
+        # print(coeff, '\n\n', outs, '\n\n', sol)
+        # print('VERIFY:', np.allclose(np.dot(coeff, sol), outs))
+
+        for s in range(self.env.observation_space.n):
+            self.V[s] = sol[s]
+
+
+        # for s in range(self.env.observation_space.n):
+        #     v = self.V[s]
+        #
+        #     a = np.argmax(self.policy[s])
+        #
+        #     p = self.env.P[s][a]
+        #
+        #     sums = 0
+        #     for st in p:
+        #         sums += st[0] * (st[2] + self.options.gamma * self.V[st[1]])
+        #
+        #     self.V[s] = sums
 
     def create_greedy_policy(self):
         """
