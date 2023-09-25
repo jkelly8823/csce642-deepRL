@@ -71,7 +71,6 @@ class ValueIteration(AbstractSolver):
             #   YOUR IMPLEMENTATION HERE   #
             ################################
 
-            v = self.V[each_state]
             a = np.argmax(self.one_step_lookahead(each_state))
             p = self.env.P[each_state][a]
 
@@ -207,43 +206,15 @@ class AsynchVI(ValueIteration):
 
         lah = self.one_step_lookahead(cur_st)
         a = np.argmax(lah)
-        p = self.env.P[cur_st][a]
 
-        sums = 0
-        for s in p:
-            sums += s[0] * self.V[s[1]]
+        self.V[cur_st] = lah[a]
 
-        self.V[cur_st] = lah[a] + self.options.gamma * sums
+        for n_st in self.pred[cur_st]:
+            lah2 = self.one_step_lookahead(n_st)
+            a2 = np.argmax(lah2)
 
-        for n_st in self.env.P:
-            stateDone = False
-            for n_a in self.env.P[n_st]:
-                if stateDone:
-                    break
-                for n_p in self.env.P[n_st][n_a]:
-                    if stateDone:
-                        break
-                    if n_p[1] == cur_st:
-                        # print('CHECKIT:', n_st, n_a, n_p, cur_st)
-
-                        lah2 = self.one_step_lookahead(n_st)
-                        a2 = np.argmax(lah2)
-                        p2 = self.env.P[n_st][a2]
-
-                        sums2 = 0
-                        for s2 in p2:
-                            sums2 += s2[0] * self.V[s2[1]]
-
-                        # upVal = self.V[n_st] - (lah2[a2] + self.options.gamma * sums2) # Fails 3, g=0.5 r=3.83
-                        upVal = np.abs(self.V[n_st] - (lah2[a2] + self.options.gamma * sums2)) # Fails 4, g=0.5 r=0.63984
-                        # upVal = -1 * np.abs(self.V[n_st] - (lah2[a2] + self.options.gamma * sums2)) # Fails 3, g=0.5 r=3.83
-                        # Fails 3 without abs, 4 with abs
-                        self.pq.update(n_st, upVal)
-                        stateDone = True
-
-
-
-
+            upVal = -1*np.abs(self.V[n_st] - lah2[a2])
+            self.pq.update(n_st, upVal)
 
         # you can ignore this part
         self.statistics[Statistics.Rewards.value] = np.sum(self.V)
