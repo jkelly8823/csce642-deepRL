@@ -36,6 +36,11 @@ class MonteCarlo(AbstractSolver):
         self.returns_sum = defaultdict(float)
         self.returns_count = defaultdict(float)
 
+        ################################
+        #   YOUR IMPLEMENTATION HERE   #
+        ################################
+        self.greedy = self.create_greedy_policy()
+
     def train_episode(self):
         """
         Run a single episode for Monte Carlo Control using Epsilon-Greedy policies.
@@ -67,6 +72,35 @@ class MonteCarlo(AbstractSolver):
         #   YOUR IMPLEMENTATION HERE   #
         ################################
 
+        while True:
+            # print('state:', state)
+            probs = self.policy(state)
+            act = np.random.choice(np.arange(len(probs)), p=probs)
+            res = self.step(act)
+
+            # print('probs, act, res:', probs, act, res)
+
+            tmp = (state,act,res[1])
+
+            # print('tmp:', tmp)
+
+            episode.append(tmp)
+
+            if res[2] == True:
+                break
+
+        # print('episode:', episode)
+
+        g = 0
+        for i in range(len(episode)-1,-1,-1):
+            g = self.options.gamma * g + episode[i][2]
+        # for i in range(0,len(episode)):
+            self.returns_sum[episode[i][0]] += episode[i][2]
+            self.returns_count[episode[i][0]] += 1
+            self.Q[episode[i][0]][episode[i][1]] = self.returns_sum[episode[i][0]] / self.returns_count[episode[i][0]]
+
+            probs = self.policy(episode[i][0])
+
     def __str__(self):
         return "Monte Carlo"
 
@@ -77,7 +111,7 @@ class MonteCarlo(AbstractSolver):
         Use:
             self.Q: A dictionary that maps from state -> action-values.
                 Each value is a numpy array of length nA
-            self.options.epsilon: Chance the sample a random action. Float betwen 0 and 1.
+            self.options.epsilon: Chance the sample a random action. Float between 0 and 1.
             self.env.action_space.n: Number of actions in the environment.
 
         Returns:
@@ -91,6 +125,14 @@ class MonteCarlo(AbstractSolver):
             ################################
             #   YOUR IMPLEMENTATION HERE   #
             ################################
+            greedyA = self.greedy(observation)
+            A = np.zeros(nA)
+            for a in range(nA):
+                if a == greedyA:
+                    A[a] += 1 - self.options.epsilon + self.options.epsilon / nA
+                else:
+                    A[a] += self.options.epsilon / nA
+            return A
 
         return policy_fn
 
@@ -110,7 +152,7 @@ class MonteCarlo(AbstractSolver):
             ################################
             #   YOUR IMPLEMENTATION HERE   #
             ################################
-
+            return np.argmax(self.Q[state])
 
         return policy_fn
 
