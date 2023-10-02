@@ -73,32 +73,25 @@ class MonteCarlo(AbstractSolver):
         ################################
 
         while True:
-            # print('state:', state)
             probs = self.policy(state)
             act = np.random.choice(np.arange(len(probs)), p=probs)
             res = self.step(act)
 
-            # print('probs, act, res:', probs, act, res)
+            tmp = (state, act, res[1])
 
-            tmp = (state,act,res[1])
-
-            # print('tmp:', tmp)
+            state = res[0]
 
             episode.append(tmp)
 
             if res[2] == True:
                 break
 
-        # print('episode:', episode)
-
         g = 0
-        for i in range(len(episode)-1,-1,-1):
+        for i in range(len(episode)-1, -1, -1):
             g = self.options.gamma * g + episode[i][2]
-        # for i in range(0,len(episode)):
-            self.returns_sum[episode[i][0]] += episode[i][2]
-            self.returns_count[episode[i][0]] += 1
-            self.Q[episode[i][0]][episode[i][1]] = self.returns_sum[episode[i][0]] / self.returns_count[episode[i][0]]
-
+            self.returns_sum[(episode[i][0],episode[i][1])] += g
+            self.returns_count[(episode[i][0],episode[i][1])] += 1
+            self.Q[episode[i][0]][episode[i][1]] = self.returns_sum[(episode[i][0],episode[i][1])] / self.returns_count[(episode[i][0],episode[i][1])]
             probs = self.policy(episode[i][0])
 
     def __str__(self):
@@ -206,7 +199,37 @@ class OffPolicyMC(MonteCarlo):
         ################################
         #   YOUR IMPLEMENTATION HERE   #
         ################################
-        
+
+        while True:
+            # print('state:', state)
+            probs = self.behavior_policy(state)
+            act = np.random.choice(np.arange(len(probs)), p=probs)
+            res = self.step(act)
+
+            # print('probs, act, res:', probs, act, res)
+
+            tmp = (state, act, res[1])
+
+            state = res[0]
+
+            # print('tmp:', tmp)
+
+            episode.append(tmp)
+
+            if res[2] == True:
+                break
+
+            # print('episode:', episode)
+
+        g = 0
+        w = 1
+        for i in range(len(episode) - 1, -1, -1):
+            g = self.options.gamma * g + episode[i][2]
+            self.C[episode[i][0]][episode[i][1]] += w
+            self.Q[episode[i][0]][episode[i][1]] += w / self.C[episode[i][0]][episode[i][1]] * (g - self.Q[episode[i][0]][episode[i][1]])
+            if episode[i][1] != self.target_policy(episode[i][0]):
+                break
+            w = w / self.behavior_policy(episode[i][0])[episode[i][1]]
 
     def create_random_policy(self):
         """
