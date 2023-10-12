@@ -47,9 +47,9 @@ class Sarsa(AbstractSolver):
         ################################
         #   YOUR IMPLEMENTATION HERE   #
         ################################
+        probs = self.epsilon_greedy_action(state)
+        act = np.random.choice(np.arange(len(probs)), p=probs)
         while True:
-            probs = self.epsilon_greedy_action(state)
-            act = np.random.choice(np.arange(len(probs)), p=probs)
             res = self.step(act)
             probs2 = self.epsilon_greedy_action(res[0])
             act2 = np.random.choice(np.arange(len(probs2)), p=probs2)
@@ -57,6 +57,7 @@ class Sarsa(AbstractSolver):
             self.Q[state][act] = self.Q[state][act] + self.options.alpha * (res[1] + self.options.gamma * self.Q[res[0]][act2] - self.Q[state][act])
 
             state = res[0]
+            act = act2
 
             if res[2] == True:
                 break
