@@ -158,10 +158,11 @@ class ApproxQLearning(QLearning):
 
             res = self.step(act)
 
-            # dbg0 = self.estimator.predict(state)
-            # dbg1 = self.estimator.predict(state, act)
+            qsa = self.estimator.predict(state,act)
+            qsp = self.estimator.predict(res[0])
 
-            tempVal = self.estimator.predict(state,act) + self.options.alpha*(res[1] + self.options.gamma*np.max(self.estimator.predict(res[0])) - self.estimator.predict(state,act))
+
+            tempVal = qsa + self.options.alpha*(res[1] + self.options.gamma*np.max(qsp) - qsa)
 
             self.estimator.update(state,act,tempVal)
 
