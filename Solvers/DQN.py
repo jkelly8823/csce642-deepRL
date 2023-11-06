@@ -101,6 +101,22 @@ class DQN(AbstractSolver):
         ################################
         #   YOUR IMPLEMENTATION HERE   #
         ################################
+        ten_state = torch.as_tensor(state)
+
+        q_vals = self.model(ten_state)
+
+        greedyP = self.create_greedy_policy()
+        greedyA = greedyP(ten_state)
+
+        nA = self.env.action_space.n
+
+        A = np.zeros(nA)
+        for a in range(nA):
+            if a == greedyA:
+                A[a] += 1 - self.options.epsilon + self.options.epsilon / nA
+            else:
+                A[a] += self.options.epsilon / nA
+        return A
 
 
     def compute_target_values(self, next_states, rewards, dones):
@@ -113,6 +129,21 @@ class DQN(AbstractSolver):
         ################################
         #   YOUR IMPLEMENTATION HERE   #
         ################################
+        if len(next_states) == next_states.size(dim=-1):
+            bnd = 1
+        else:
+            bnd = len(next_states)
+
+        q = []
+        for j in range(0, bnd):
+            if dones[j]:
+                q.append(rewards[j])
+            else:
+                tmp = self.model(next_states[j])
+                q.append(rewards[j] + self.options.gamma * tmp[torch.argmax(tmp)])
+        return torch.as_tensor(q)
+
+
 
 
     def replay(self):
@@ -188,6 +219,26 @@ class DQN(AbstractSolver):
             ################################
             #   YOUR IMPLEMENTATION HERE   #
             ################################
+            while True:
+                probs = self.epsilon_greedy(state)
+                act = np.random.choice(np.arange(len(probs)), p=probs)
+
+                res = self.step(act)
+
+                self.n_steps += 1
+
+                self.memorize(state, act, res[1], res[0], res[2])
+
+                self.replay()
+
+                state = res[0]
+
+                if (self.n_steps % self.options.update_target_estimator_every == 0) and (_ != 0):
+                    self.update_target_model()
+
+                if res[2]:
+                    break
+            state = self.env.reset()[0]
 
 
     def __str__(self):
