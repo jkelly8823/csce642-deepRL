@@ -219,26 +219,21 @@ class DQN(AbstractSolver):
             ################################
             #   YOUR IMPLEMENTATION HERE   #
             ################################
-            while True:
-                probs = self.epsilon_greedy(state)
-                act = np.random.choice(np.arange(len(probs)), p=probs)
+            probs = self.epsilon_greedy(state)
+            act = np.random.choice(np.arange(len(probs)), p=probs)
 
-                res = self.step(act)
+            res = self.step(act)
 
-                self.n_steps += 1
+            self.n_steps += 1
 
-                self.memorize(state, act, res[1], res[0], res[2])
+            self.memorize(state, act, res[1], res[0], res[2])
 
-                self.replay()
+            self.replay()
 
-                state = res[0]
+            state = res[0]
 
-                if (self.n_steps % self.options.update_target_estimator_every == 0) and (_ != 0):
-                    self.update_target_model()
-
-                if res[2]:
-                    break
-            state = self.env.reset()[0]
+            if (self.n_steps % self.options.update_target_estimator_every == 0) and (_ != 0):
+                self.update_target_model()
 
 
     def __str__(self):
