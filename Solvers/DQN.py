@@ -228,12 +228,16 @@ class DQN(AbstractSolver):
 
             self.memorize(state, act, res[1], res[0], res[2])
 
-            self.replay()
-
             state = res[0]
+
+            self.replay()
 
             if (self.n_steps % self.options.update_target_estimator_every == 0) and (_ != 0):
                 self.update_target_model()
+
+            if res[2]:
+                break
+
 
 
     def __str__(self):
