@@ -113,7 +113,7 @@ class DQN(AbstractSolver):
         A = np.zeros(nA)
         for a in range(nA):
             if a == greedyA:
-                A[a] += 1 - self.options.epsilon + self.options.epsilon / nA
+                A[a] += 1 - self.options.epsilon + (self.options.epsilon / nA)
             else:
                 A[a] += self.options.epsilon / nA
         return A
@@ -129,19 +129,7 @@ class DQN(AbstractSolver):
         ################################
         #   YOUR IMPLEMENTATION HERE   #
         ################################
-        if len(next_states) == next_states.size(dim=-1):
-            bnd = 1
-        else:
-            bnd = len(next_states)
-
-        q = []
-        for j in range(0, bnd):
-            if dones[j]:
-                q.append(rewards[j])
-            else:
-                tmp = self.model(next_states[j])
-                q.append(rewards[j] + self.options.gamma * tmp[torch.argmax(tmp)])
-        return torch.as_tensor(q)
+        return rewards + self.options.gamma*torch.max(self.target_model(next_states), dim=-1)[0] * (1-dones)
 
 
 
@@ -228,16 +216,15 @@ class DQN(AbstractSolver):
 
             self.memorize(state, act, res[1], res[0], res[2])
 
-            state = res[0]
-
             self.replay()
 
-            if (self.n_steps % self.options.update_target_estimator_every == 0) and (_ != 0):
+            state = res[0]
+
+            if self.n_steps % self.options.update_target_estimator_every == 0:
                 self.update_target_model()
 
             if res[2]:
                 break
-
 
 
     def __str__(self):
