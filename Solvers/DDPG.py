@@ -154,7 +154,7 @@ class DDPG(AbstractSolver):
         ################################
         #   YOUR IMPLEMENTATION HERE   #
         ################################
-
+        return rewards + self.options.gamma * (1-dones) * self.target_actor_critic.q(next_states, self.target_actor_critic.pi(next_states))
 
     def replay(self):
         """
