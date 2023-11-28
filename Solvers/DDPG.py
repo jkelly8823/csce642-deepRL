@@ -220,7 +220,21 @@ class DDPG(AbstractSolver):
             ################################
             #   YOUR IMPLEMENTATION HERE   #
             ################################
-            
+            act = self.select_action(state)
+
+            ret = self.step(act)
+
+            self.memorize(state, act, ret[1], ret[0], ret[2])
+
+            self.replay()
+
+            self.update_target_networks()
+
+            state = ret[0]
+
+            if ret[2]:
+                break
+
 
     def q_loss(self, current_q, target_q):
         """
@@ -236,6 +250,7 @@ class DDPG(AbstractSolver):
         ################################
         #   YOUR IMPLEMENTATION HERE   #
         ################################
+        return torch.as_tensor((target_q - current_q)**2)
 
     def pi_loss(self, states):
         """
@@ -258,6 +273,9 @@ class DDPG(AbstractSolver):
         ################################
         #   YOUR IMPLEMENTATION HERE   #
         ################################
+        acts = self.actor_critic.pi(states)
+        qVals = self.actor_critic.q(states, acts)
+        return -1*qVals
 
     def __str__(self):
         return "DDPG"
